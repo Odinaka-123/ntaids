@@ -1,0 +1,10 @@
+data/raw/
+data/processed/
+__pycache__/
+*.pyc
+.env
+*.h5
+*.pkl
+*.joblib
+.ipynb_checkpoints/
+results/
