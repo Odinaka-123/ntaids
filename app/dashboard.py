@@ -18,12 +18,12 @@ st.markdown("Upload a CSV of network flow records to detect intrusions.")
 def load_models():
     models = {}
     try:
-        models['rf']     = joblib.load('notebooks/results/rf2_model.pkl')
-        models['svm']    = joblib.load('notebooks/results/svm2_model.pkl')
-        models['lstm']   = keras.models.load_model('notebooks/results/lstm2_model')
-        models['scaler'] = joblib.load('notebooks/results/scaler2.pkl')
-        models['pca']    = joblib.load('notebooks/results/pca2.pkl')
-        models['le']     = joblib.load('notebooks/results/label_encoder2.pkl')
+        models['rf']     = joblib.load('models/rf2_model.pkl')
+        models['svm']    = joblib.load('models/svm2_model.pkl')
+        models['lstm']   = keras.models.load_model('models/lstm2_model')
+        models['scaler'] = joblib.load('models/scaler2.pkl')
+        models['pca']    = joblib.load('models/pca2.pkl')
+        models['le']     = joblib.load('models/label_encoder2.pkl')
         return models, None
     except Exception as e:
         return None, str(e)
