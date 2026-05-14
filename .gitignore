@@ -9,3 +9,7 @@ __pycache__/
 .ipynb_checkpoints/
 results/
 venv/
+# Allow model files
+!models/*.pkl
+!models/lstm2_model/
+!models/lstm2_model/**
