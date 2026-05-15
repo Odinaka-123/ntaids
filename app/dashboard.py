@@ -23,6 +23,7 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
 /* ── Reset & base ── */
+*, *::before, *::after { box-sizing: border-box; }
 html, body, [class*="css"] {
     font-family: 'IBM Plex Sans', sans-serif;
     color: #e2e8f0;
@@ -37,72 +38,101 @@ html, body, [class*="css"] {
 
 /* ── Hide Streamlit chrome ── */
 #MainMenu, footer, header { visibility: hidden; }
-.block-container { padding: 2rem 3rem 4rem; max-width: 1400px; }
+
+/* ── Container: tight on mobile, generous on desktop ── */
+.block-container {
+    padding: 1rem 1rem 3rem !important;
+    max-width: 1400px !important;
+}
+@media (min-width: 640px) {
+    .block-container { padding: 2rem 2rem 4rem !important; }
+}
+@media (min-width: 1024px) {
+    .block-container { padding: 2rem 3rem 4rem !important; }
+}
 
 /* ── Custom header ── */
 .ids-header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 1.2rem;
-    padding: 2rem 0 1.5rem;
+    gap: 1rem;
+    padding: 1.5rem 0 1.2rem;
     border-bottom: 1px solid rgba(0,255,128,0.15);
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
 .ids-logo {
-    width: 48px; height: 48px;
+    width: 42px; height: 42px;
     background: linear-gradient(135deg, #00ff80 0%, #00c46a 100%);
     border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.4rem;
+    font-size: 1.25rem;
     box-shadow: 0 0 24px rgba(0,255,128,0.35);
     flex-shrink: 0;
 }
+.ids-title-block { flex: 1; min-width: 0; }
 .ids-title-block h1 {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 1.55rem;
+    font-size: clamp(1.1rem, 4vw, 1.55rem);
     font-weight: 600;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     color: #f0fdf4;
     margin: 0;
     line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .ids-title-block p {
-    font-size: 0.78rem;
+    font-size: clamp(0.6rem, 2vw, 0.78rem);
     color: #4ade80;
     margin: 0.3rem 0 0;
     font-family: 'IBM Plex Mono', monospace;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* ── Status pill ── */
+/* ── Status pills ── */
 .status-bar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 0.6rem;
-    margin-left: auto;
+    gap: 0.5rem;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.72rem;
+    font-size: 0.7rem;
+    /* On very small screens, pills drop below header */
+    width: 100%;
+}
+@media (min-width: 520px) {
+    .status-bar { width: auto; margin-left: auto; }
 }
 .pill {
-    padding: 0.3rem 0.85rem;
+    padding: 0.28rem 0.75rem;
     border-radius: 100px;
     font-weight: 500;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    font-size: 0.68rem;
 }
 .pill-ok   { background: rgba(0,255,128,0.12); color: #4ade80; border: 1px solid rgba(0,255,128,0.3); }
 .pill-warn { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
 
-/* ── Metric cards ── */
-.metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0; }
+/* ── Metric cards — single column on mobile, 3-col on desktop ── */
 .metric-card {
     background: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.07);
     border-radius: 12px;
-    padding: 1.4rem 1.6rem;
+    padding: 1.1rem 1.2rem;
     position: relative;
     overflow: hidden;
     transition: border-color 0.2s;
+    margin-bottom: 0;        /* gap handled by st.columns */
+}
+@media (min-width: 640px) {
+    .metric-card { padding: 1.4rem 1.6rem; }
 }
 .metric-card::before {
     content: '';
@@ -114,23 +144,23 @@ html, body, [class*="css"] {
 .metric-card:hover { border-color: rgba(255,255,255,0.14); }
 .metric-label {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.67rem;
-    letter-spacing: 0.14em;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: #64748b;
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.45rem;
 }
 .metric-value {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 2rem;
+    font-size: clamp(1.4rem, 5vw, 2rem);
     font-weight: 600;
     line-height: 1;
     color: #f0fdf4;
 }
 .metric-sub {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: #94a3b8;
-    margin-top: 0.35rem;
+    margin-top: 0.3rem;
 }
 .metric-card.danger .metric-value { color: #f87171; }
 .metric-card.safe  .metric-value  { color: #4ade80; }
@@ -138,37 +168,27 @@ html, body, [class*="css"] {
 /* ── Section headings ── */
 .section-head {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.7rem;
-    letter-spacing: 0.18em;
+    font-size: 0.65rem;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     color: #4ade80;
-    padding: 0 0 0.6rem;
+    padding: 0 0 0.5rem;
     border-bottom: 1px solid rgba(0,255,128,0.12);
-    margin: 2.5rem 0 1.2rem;
+    margin: 2rem 0 1rem;
 }
-
-/* ── Upload zone ── */
-.upload-zone {
-    border: 1.5px dashed rgba(0,255,128,0.25);
-    border-radius: 14px;
-    padding: 2.5rem;
-    text-align: center;
-    background: rgba(0,255,128,0.02);
-    transition: border-color 0.2s, background 0.2s;
-}
-.upload-zone:hover { border-color: rgba(0,255,128,0.45); background: rgba(0,255,128,0.04); }
 
 /* ── DataFrame ── */
 [data-testid="stDataFrame"] {
     border: 1px solid rgba(255,255,255,0.07) !important;
     border-radius: 10px !important;
     overflow: hidden;
+    max-width: 100% !important;
 }
 
 /* ── Bar chart ── */
 [data-testid="stVegaLiteChart"] { border-radius: 10px; overflow: hidden; }
 
-/* ── Buttons ── */
+/* ── Buttons — full-width on mobile ── */
 .stButton > button {
     background: linear-gradient(135deg, #00c46a, #00ff80) !important;
     color: #052e16 !important;
@@ -178,9 +198,13 @@ html, body, [class*="css"] {
     letter-spacing: 0.08em !important;
     border: none !important;
     border-radius: 8px !important;
-    padding: 0.65rem 2rem !important;
+    padding: 0.65rem 1.5rem !important;
+    width: 100% !important;
     transition: opacity 0.15s, transform 0.1s !important;
     box-shadow: 0 0 20px rgba(0,255,128,0.25) !important;
+}
+@media (min-width: 640px) {
+    .stButton > button { width: auto !important; }
 }
 .stButton > button:hover { opacity: 0.9 !important; transform: translateY(-1px) !important; }
 .stButton > button:active { transform: translateY(0) !important; }
@@ -193,6 +217,7 @@ html, body, [class*="css"] {
     font-family: 'IBM Plex Mono', monospace !important;
     font-size: 0.78rem !important;
     border-radius: 8px !important;
+    width: 100% !important;
 }
 .stDownloadButton > button:hover {
     background: rgba(255,255,255,0.09) !important;
@@ -204,7 +229,7 @@ html, body, [class*="css"] {
     border-radius: 10px !important;
     border-left-width: 3px !important;
     font-family: 'IBM Plex Mono', monospace !important;
-    font-size: 0.8rem !important;
+    font-size: 0.78rem !important;
 }
 
 /* ── Spinner ── */
@@ -215,29 +240,37 @@ html, body, [class*="css"] {
     background: rgba(255,255,255,0.02);
     border: 1px solid rgba(255,255,255,0.07);
     border-radius: 12px;
-    padding: 1rem;
+    padding: 0.75rem;
 }
 
 /* ── Divider ── */
 hr { border-color: rgba(255,255,255,0.06) !important; }
 
 /* ── Scrollbar ── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 9px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
 
-/* ── Table badge styling ── */
-.attack-badge {
-    display: inline-block;
-    padding: 0.18rem 0.55rem;
-    border-radius: 4px;
+/* ── Footer ── */
+.ids-footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.7rem;
-    font-weight: 500;
+    font-size: 0.62rem;
+    color: #334155;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
 }
-.badge-benign  { background: rgba(0,255,128,0.1);  color: #4ade80; }
-.badge-attack  { background: rgba(239,68,68,0.12); color: #f87171; }
+@media (min-width: 640px) {
+    .ids-footer {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -409,14 +442,14 @@ if uploaded:
             counts.columns = ['Attack Type', 'Count']
             counts['% Share'] = (counts['Count'] / total * 100).round(2)
 
-            col_chart, col_table = st.columns([3, 2], gap="large")
+            col_chart, col_table = st.columns([1, 1], gap="medium")
 
             with col_chart:
                 chart_df = counts.set_index('Attack Type')['Count']
-                st.bar_chart(chart_df, color="#00ff80", use_container_width=True, height=280)
+                st.bar_chart(chart_df, color="#00ff80", use_container_width=True, height=260)
 
             with col_table:
-                st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='height:0.4rem'></div>", unsafe_allow_html=True)
                 # Colour-coded table
                 def style_row(row):
                     if row['Attack Type'] == 'BENIGN':
@@ -424,7 +457,7 @@ if uploaded:
                     return ['color:#f87171'] * len(row)
 
                 styled = counts.style.apply(style_row, axis=1).format({'Count': '{:,}', '% Share': '{:.2f}%'})
-                st.dataframe(styled, use_container_width=True, hide_index=True, height=280)
+                st.dataframe(styled, use_container_width=True, hide_index=True, height=260)
 
             # ── Sample predictions ──────────────────────────────────────────────
             st.markdown('<div class="section-head">06 · FLOW-LEVEL PREDICTIONS</div>', unsafe_allow_html=True)
@@ -454,28 +487,23 @@ if uploaded:
             st.markdown('<div class="section-head">07 · EXPORT</div>', unsafe_allow_html=True)
             csv_bytes = df_out.to_csv(index=False).encode()
 
-            dl1, dl2 = st.columns([1, 3])
-            with dl1:
-                st.download_button(
-                    "⬇  Download Full Results (CSV)",
-                    data=csv_bytes,
-                    file_name="nta_ids_results.csv",
-                    mime="text/csv",
-                )
-            with dl2:
-                st.markdown(f"""
-                <div style="padding:0.6rem 0; font-family:'IBM Plex Mono',monospace;
-                            font-size:0.72rem; color:#475569; line-height:1.8;">
-                  nta_ids_results.csv · {len(df_out):,} rows · {df_out.shape[1]} columns<br>
-                  includes: raw features + prediction + confidence score + threat flag
-                </div>
-                """, unsafe_allow_html=True)
+            st.download_button(
+                "⬇  Download Full Results (CSV)",
+                data=csv_bytes,
+                file_name="nta_ids_results.csv",
+                mime="text/csv",
+            )
+            st.markdown(f"""
+            <div style="margin-top:0.5rem; font-family:'IBM Plex Mono',monospace;
+                        font-size:0.7rem; color:#475569; line-height:1.9;">
+              nta_ids_results.csv · {len(df_out):,} rows · {df_out.shape[1]} columns<br>
+              includes: raw features + prediction + confidence score + threat flag
+            </div>
+            """, unsafe_allow_html=True)
 
 # ── Footer ──────────────────────────────────────────────────────────────────────
 st.markdown("""
-<div style="margin-top:4rem; padding-top:1.2rem; border-top:1px solid rgba(255,255,255,0.05);
-            display:flex; justify-content:space-between; align-items:center;
-            font-family:'IBM Plex Mono',monospace; font-size:0.65rem; color:#334155;">
+<div class="ids-footer">
   <span>NTA-IDS · Ensemble: RF + SVM + LSTM</span>
   <span>© Network Traffic Analyser — Intrusion Detection System</span>
 </div>
