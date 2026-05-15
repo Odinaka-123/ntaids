@@ -160,7 +160,7 @@ def _logout():
     if token:
         revoke_session(token)
     st.session_state.pop("auth_token", None)
-    st.experimental_rerun()
+    st.rerun()
 
 
 # ══════════════════════════════════════════════════════════════
@@ -227,7 +227,7 @@ with tab_login:
                 token = create_session(result["user"]["id"])
                 st.session_state["auth_token"] = token
                 st.success("Authenticated. Redirecting…", icon="✅")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error(result["error"], icon="🚫")
 
