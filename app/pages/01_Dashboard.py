@@ -6,7 +6,7 @@ import os
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent.parent
+ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 # ── Page config — MUST be first Streamlit call ────────────────────────────────
@@ -14,7 +14,7 @@ st.set_page_config(
     page_title="NTA-IDS · Intrusion Detection",
     page_icon="🛡️",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # ── Auth ──────────────────────────────────────────────────────────────────────

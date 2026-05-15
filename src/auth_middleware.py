@@ -4,9 +4,9 @@ src/auth_middleware.py
 Drop-in auth guard for any NTA-IDS Streamlit page.
 
 Usage at the top of any protected page:
-    from src.auth_middleware import require_auth, require_permission
-    user = require_auth()                           # redirects to login if not authed
-    require_permission(user, "export", "can_export") # blocks if no permission
+    from src.auth_middleware import require_auth, require_permission, user_badge
+    user = require_auth()
+    user_badge(user)
 """
 
 import streamlit as st
@@ -16,7 +16,7 @@ import sys
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.auth_db import validate_session, has_permission, log_action
+from src.auth_db import validate_session, has_permission, log_action, revoke_session
 
 
 def _current_user():
@@ -31,17 +31,15 @@ def require_auth() -> dict:
     Validates session. If invalid/missing, shows a redirect prompt and stops.
     Returns the user dict on success.
     """
-    # Guard: ensure set_page_config has been called before any st command.
-    # If the page already called it, this is silently ignored.
     try:
         st.set_page_config(
             page_title="NTA-IDS",
             page_icon="🛡️",
             layout="wide",
-            initial_sidebar_state="collapsed",
+            initial_sidebar_state="expanded",
         )
     except st.errors.StreamlitAPIException:
-        pass  # already set by the calling page — that's fine
+        pass  # already set by the calling page
 
     user = _current_user()
     if user:
@@ -113,7 +111,7 @@ def audit(user: dict, action: str, resource: str, detail: str = ""):
 
 
 def user_badge(user: dict):
-    """Renders a compact user pill in the sidebar."""
+    """Renders sidebar nav: user pill, page links, and sign out."""
     role_colors = {
         "admin":   ("#ef4444", "rgba(239,68,68,0.12)"),
         "analyst": ("#4ade80", "rgba(0,255,128,0.10)"),
@@ -121,9 +119,10 @@ def user_badge(user: dict):
     }
     color, bg = role_colors.get(user["role"], ("#94a3b8", "rgba(148,163,184,0.10)"))
 
+    # ── User pill ────────────────────────────────────────────────────────────
     st.sidebar.markdown(f"""
     <div style="
-        padding: 0.75rem 1rem; margin-bottom: 0.5rem;
+        padding: 0.75rem 1rem; margin-bottom: 0.75rem;
         background: rgba(255,255,255,0.03);
         border: 1px solid rgba(255,255,255,0.07);
         border-radius: 10px;
@@ -143,3 +142,27 @@ def user_badge(user: dict):
       ">{user['role'].upper()}</span>
     </div>
     """, unsafe_allow_html=True)
+
+    # ── Navigation ───────────────────────────────────────────────────────────
+    st.sidebar.markdown("""
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:0.6rem;
+                letter-spacing:0.12em; text-transform:uppercase; color:#475569;
+                margin-bottom:0.4rem;">
+      Navigation
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.sidebar.page_link("pages/01_Dashboard.py", label="🛡️  Dashboard")
+
+    if user["role"] == "admin":
+        st.sidebar.page_link("pages/05_Admin.py", label="⚙️  Admin Panel")
+
+    st.sidebar.markdown("<hr style='border-color:rgba(255,255,255,0.06); margin:0.75rem 0'>", unsafe_allow_html=True)
+
+    # ── Sign out ─────────────────────────────────────────────────────────────
+    if st.sidebar.button("🔒  Sign Out", use_container_width=True):
+        token = st.session_state.get("auth_token")
+        if token:
+            revoke_session(token)
+        st.session_state.pop("auth_token", None)
+        st.switch_page("Login.py")
