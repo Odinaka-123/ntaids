@@ -164,37 +164,13 @@ def _logout():
 
 
 # ══════════════════════════════════════════════════════════════
-#  Already authenticated → identity banner
+#  Already authenticated → redirect to dashboard
 # ══════════════════════════════════════════════════════════════
 
 user = _get_session()
 
 if user:
-    role_cls = f"role-{user['role']}"
-    st.markdown(f"""
-    <div class="auth-logo">🛡️</div>
-    <p class="auth-title">NTA-IDS</p>
-    <p class="auth-sub">Session Active</p>
-    <div style="
-        background: rgba(0,255,128,0.04);
-        border: 1px solid rgba(0,255,128,0.15);
-        border-radius: 12px; padding: 1.4rem 1.6rem;
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.78rem; line-height: 2; color: #94a3b8;
-    ">
-        <span style="color:#4ade80;">●</span> Authenticated as
-        <span style="color:#f0fdf4; font-weight:600;">{user['username']}</span>
-        <span class="role-pill {role_cls}" style="margin-left:0.4rem;">{user['role'].upper()}</span><br>
-        <span style="color:#4ade80;">›</span> {user['email']}<br>
-        <span style="color:#4ade80;">›</span> Session expires in {SESSION_TTL_HOURS}h
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<div style='margin-top:1.2rem'></div>", unsafe_allow_html=True)
-    st.info("Navigate to **NTA-IDS** from the sidebar to begin analysis.", icon="🔗")
-    if st.button("🔒  Sign Out"):
-        _logout()
-    st.stop()
+    st.switch_page("pages/01_Dashboard.py")
 
 
 # ══════════════════════════════════════════════════════════════
@@ -226,8 +202,7 @@ with tab_login:
             if result["ok"]:
                 token = create_session(result["user"]["id"])
                 st.session_state["auth_token"] = token
-                st.success("Authenticated. Redirecting…", icon="✅")
-                st.rerun()
+                st.switch_page("pages/01_Dashboard.py")
             else:
                 st.error(result["error"], icon="🚫")
 
