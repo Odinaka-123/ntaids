@@ -6,10 +6,10 @@ import os
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
 
-# ── Page config ────────────────────────────────────────────────────────────────
+# ── Page config — MUST be first Streamlit call ────────────────────────────────
 st.set_page_config(
     page_title="NTA-IDS · Intrusion Detection",
     page_icon="🛡️",
@@ -17,46 +17,37 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ── Global CSS ─────────────────────────────────────────────────────────────────
+# ── Auth ──────────────────────────────────────────────────────────────────────
+from src.auth_middleware import require_auth, user_badge
+user = require_auth()
+user_badge(user)
+
+# ── Global CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
-/* ── Reset & base ── */
 *, *::before, *::after { box-sizing: border-box; }
 html, body, [class*="css"] {
     font-family: 'IBM Plex Sans', sans-serif;
     color: #e2e8f0;
 }
-
 .stApp {
     background: #05070d;
     background-image:
         radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,255,128,0.06) 0%, transparent 70%),
         linear-gradient(180deg, #05070d 0%, #080c14 100%);
 }
-
-/* ── Hide Streamlit chrome ── */
 #MainMenu, footer, header { visibility: hidden; }
-
-/* ── Container: tight on mobile, generous on desktop ── */
 .block-container {
     padding: 1rem 1rem 3rem !important;
     max-width: 1400px !important;
 }
-@media (min-width: 640px) {
-    .block-container { padding: 2rem 2rem 4rem !important; }
-}
-@media (min-width: 1024px) {
-    .block-container { padding: 2rem 3rem 4rem !important; }
-}
+@media (min-width: 640px)  { .block-container { padding: 2rem 2rem 4rem !important; } }
+@media (min-width: 1024px) { .block-container { padding: 2rem 3rem 4rem !important; } }
 
-/* ── Custom header ── */
 .ids-header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 1rem;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 1rem;
     padding: 1.5rem 0 1.2rem;
     border-bottom: 1px solid rgba(0,255,128,0.15);
     margin-bottom: 1.5rem;
@@ -74,207 +65,109 @@ html, body, [class*="css"] {
 .ids-title-block h1 {
     font-family: 'IBM Plex Mono', monospace;
     font-size: clamp(1.1rem, 4vw, 1.55rem);
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    color: #f0fdf4;
-    margin: 0;
-    line-height: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-weight: 600; letter-spacing: 0.06em; color: #f0fdf4;
+    margin: 0; line-height: 1; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
 }
 .ids-title-block p {
-    font-size: clamp(0.6rem, 2vw, 0.78rem);
-    color: #4ade80;
-    margin: 0.3rem 0 0;
-    font-family: 'IBM Plex Mono', monospace;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: clamp(0.6rem, 2vw, 0.78rem); color: #4ade80;
+    margin: 0.3rem 0 0; font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-
-/* ── Status pills ── */
 .status-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.7rem;
-    /* On very small screens, pills drop below header */
-    width: 100%;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; width: 100%;
 }
-@media (min-width: 520px) {
-    .status-bar { width: auto; margin-left: auto; }
-}
+@media (min-width: 520px) { .status-bar { width: auto; margin-left: auto; } }
 .pill {
-    padding: 0.28rem 0.75rem;
-    border-radius: 100px;
-    font-weight: 500;
-    letter-spacing: 0.05em;
-    white-space: nowrap;
-    font-size: 0.68rem;
+    padding: 0.28rem 0.75rem; border-radius: 100px;
+    font-weight: 500; letter-spacing: 0.05em; white-space: nowrap; font-size: 0.68rem;
 }
 .pill-ok   { background: rgba(0,255,128,0.12); color: #4ade80; border: 1px solid rgba(0,255,128,0.3); }
 .pill-warn { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
 
-/* ── Metric cards — single column on mobile, 3-col on desktop ── */
 .metric-card {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 12px;
-    padding: 1.1rem 1.2rem;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.2s;
-    margin-bottom: 0;        /* gap handled by st.columns */
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px; padding: 1.1rem 1.2rem;
+    position: relative; overflow: hidden; transition: border-color 0.2s; margin-bottom: 0;
 }
-@media (min-width: 640px) {
-    .metric-card { padding: 1.4rem 1.6rem; }
-}
+@media (min-width: 640px) { .metric-card { padding: 1.4rem 1.6rem; } }
 .metric-card::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
 }
 .metric-card.neutral::before { background: linear-gradient(90deg, #334155, #475569); }
 .metric-card.safe::before    { background: linear-gradient(90deg, #00ff80, #4ade80); }
 .metric-card.danger::before  { background: linear-gradient(90deg, #ef4444, #f97316); }
 .metric-card:hover { border-color: rgba(255,255,255,0.14); }
 .metric-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.62rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #64748b;
-    margin-bottom: 0.45rem;
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem;
+    letter-spacing: 0.12em; text-transform: uppercase; color: #64748b; margin-bottom: 0.45rem;
 }
 .metric-value {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: clamp(1.4rem, 5vw, 2rem);
-    font-weight: 600;
-    line-height: 1;
-    color: #f0fdf4;
+    font-size: clamp(1.4rem, 5vw, 2rem); font-weight: 600; line-height: 1; color: #f0fdf4;
 }
-.metric-sub {
-    font-size: 0.72rem;
-    color: #94a3b8;
-    margin-top: 0.3rem;
-}
+.metric-sub { font-size: 0.72rem; color: #94a3b8; margin-top: 0.3rem; }
 .metric-card.danger .metric-value { color: #f87171; }
 .metric-card.safe  .metric-value  { color: #4ade80; }
 
-/* ── Section headings ── */
 .section-head {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.65rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: #4ade80;
-    padding: 0 0 0.5rem;
-    border-bottom: 1px solid rgba(0,255,128,0.12);
-    margin: 2rem 0 1rem;
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
+    letter-spacing: 0.16em; text-transform: uppercase; color: #4ade80;
+    padding: 0 0 0.5rem; border-bottom: 1px solid rgba(0,255,128,0.12); margin: 2rem 0 1rem;
 }
-
-/* ── DataFrame ── */
 [data-testid="stDataFrame"] {
     border: 1px solid rgba(255,255,255,0.07) !important;
-    border-radius: 10px !important;
-    overflow: hidden;
-    max-width: 100% !important;
+    border-radius: 10px !important; overflow: hidden; max-width: 100% !important;
 }
-
-/* ── Bar chart ── */
 [data-testid="stVegaLiteChart"] { border-radius: 10px; overflow: hidden; }
-
-/* ── Buttons — full-width on mobile ── */
 .stButton > button {
     background: linear-gradient(135deg, #00c46a, #00ff80) !important;
-    color: #052e16 !important;
-    font-family: 'IBM Plex Mono', monospace !important;
-    font-weight: 600 !important;
-    font-size: 0.82rem !important;
-    letter-spacing: 0.08em !important;
-    border: none !important;
-    border-radius: 8px !important;
-    padding: 0.65rem 1.5rem !important;
-    width: 100% !important;
-    transition: opacity 0.15s, transform 0.1s !important;
+    color: #052e16 !important; font-family: 'IBM Plex Mono', monospace !important;
+    font-weight: 600 !important; font-size: 0.82rem !important;
+    letter-spacing: 0.08em !important; border: none !important;
+    border-radius: 8px !important; padding: 0.65rem 1.5rem !important;
+    width: 100% !important; transition: opacity 0.15s, transform 0.1s !important;
     box-shadow: 0 0 20px rgba(0,255,128,0.25) !important;
 }
-@media (min-width: 640px) {
-    .stButton > button { width: auto !important; }
-}
-.stButton > button:hover { opacity: 0.9 !important; transform: translateY(-1px) !important; }
+@media (min-width: 640px) { .stButton > button { width: auto !important; } }
+.stButton > button:hover  { opacity: 0.9 !important; transform: translateY(-1px) !important; }
 .stButton > button:active { transform: translateY(0) !important; }
-
-/* ── Download button ── */
 .stDownloadButton > button {
-    background: rgba(255,255,255,0.05) !important;
-    color: #94a3b8 !important;
+    background: rgba(255,255,255,0.05) !important; color: #94a3b8 !important;
     border: 1px solid rgba(255,255,255,0.1) !important;
-    font-family: 'IBM Plex Mono', monospace !important;
-    font-size: 0.78rem !important;
-    border-radius: 8px !important;
-    width: 100% !important;
+    font-family: 'IBM Plex Mono', monospace !important; font-size: 0.78rem !important;
+    border-radius: 8px !important; width: 100% !important;
 }
-.stDownloadButton > button:hover {
-    background: rgba(255,255,255,0.09) !important;
-    color: #e2e8f0 !important;
-}
-
-/* ── Alerts ── */
+.stDownloadButton > button:hover { background: rgba(255,255,255,0.09) !important; color: #e2e8f0 !important; }
 .stAlert {
-    border-radius: 10px !important;
-    border-left-width: 3px !important;
-    font-family: 'IBM Plex Mono', monospace !important;
-    font-size: 0.78rem !important;
+    border-radius: 10px !important; border-left-width: 3px !important;
+    font-family: 'IBM Plex Mono', monospace !important; font-size: 0.78rem !important;
 }
-
-/* ── Spinner ── */
 .stSpinner > div { border-top-color: #00ff80 !important; }
-
-/* ── File uploader ── */
 [data-testid="stFileUploader"] {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 12px;
-    padding: 0.75rem;
+    background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px; padding: 0.75rem;
 }
-
-/* ── Divider ── */
 hr { border-color: rgba(255,255,255,0.06) !important; }
-
-/* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 9px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
-
-/* ── Footer ── */
 .ids-footer {
-    margin-top: 3rem;
-    padding-top: 1rem;
+    margin-top: 3rem; padding-top: 1rem;
     border-top: 1px solid rgba(255,255,255,0.05);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.62rem;
-    color: #334155;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; color: #334155;
+    display: flex; flex-direction: column; gap: 0.25rem;
 }
 @media (min-width: 640px) {
-    .ids-footer {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-    }
+    .ids-footer { flex-direction: row; justify-content: space-between; align-items: center; }
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ── Load models ────────────────────────────────────────────────────────────────
+# ── Load models ───────────────────────────────────────────────────────────────
 @st.cache_resource
 def load_models():
     try:
@@ -295,7 +188,7 @@ def load_models():
 
 models, error = load_models()
 
-# ── Header ─────────────────────────────────────────────────────────────────────
+# ── Header ────────────────────────────────────────────────────────────────────
 model_status_pill = (
     '<span class="pill pill-ok">● MODELS LOADED</span>'
     if not error
@@ -317,11 +210,10 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Model warning ──────────────────────────────────────────────────────────────
 if error:
     st.warning(f"**Models unavailable** — {error}  \nRun the training pipeline notebook to generate model artefacts.", icon="⚠️")
 
-# ── Upload ─────────────────────────────────────────────────────────────────────
+# ── Upload ────────────────────────────────────────────────────────────────────
 st.markdown('<div class="section-head">01 · DATA INGESTION</div>', unsafe_allow_html=True)
 
 uploaded = st.file_uploader(
@@ -341,7 +233,7 @@ if not uploaded:
     </div>
     """, unsafe_allow_html=True)
 
-# ── Analysis ───────────────────────────────────────────────────────────────────
+# ── Analysis ──────────────────────────────────────────────────────────────────
 if uploaded:
     df = pd.read_csv(uploaded, low_memory=False)
     df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
@@ -371,7 +263,6 @@ if uploaded:
 
     st.dataframe(df.head(8), use_container_width=True, height=240)
 
-    # ── Run button ──────────────────────────────────────────────────────────────
     st.markdown('<div class="section-head">03 · DETECTION ENGINE</div>', unsafe_allow_html=True)
 
     if not models:
@@ -407,7 +298,6 @@ if uploaded:
                 labels = models['le'].inverse_transform(preds)
                 confs  = avg.max(axis=1)
 
-            # ── Results ──────────────────────────────────────────────────────────
             st.markdown('<div class="section-head">04 · THREAT SUMMARY</div>', unsafe_allow_html=True)
 
             total   = len(labels)
@@ -435,7 +325,6 @@ if uploaded:
               <div class="metric-sub">{pct:.1f}% attack rate</div>
             </div>""", unsafe_allow_html=True)
 
-            # ── Attack breakdown ────────────────────────────────────────────────
             st.markdown('<div class="section-head">05 · ATTACK TYPE BREAKDOWN</div>', unsafe_allow_html=True)
 
             counts = pd.Series(labels).value_counts().reset_index()
@@ -450,22 +339,19 @@ if uploaded:
 
             with col_table:
                 st.markdown("<div style='height:0.4rem'></div>", unsafe_allow_html=True)
-                # Colour-coded table
                 def style_row(row):
                     if row['Attack Type'] == 'BENIGN':
                         return ['color:#4ade80'] * len(row)
                     return ['color:#f87171'] * len(row)
-
                 styled = counts.style.apply(style_row, axis=1).format({'Count': '{:,}', '% Share': '{:.2f}%'})
                 st.dataframe(styled, use_container_width=True, hide_index=True, height=260)
 
-            # ── Sample predictions ──────────────────────────────────────────────
             st.markdown('<div class="section-head">06 · FLOW-LEVEL PREDICTIONS</div>', unsafe_allow_html=True)
 
             df_out = df.copy()
-            df_out['prediction']  = labels
-            df_out['confidence']  = (confs * 100).round(1)
-            df_out['threat']      = np.where(labels == 'BENIGN', '✅ Benign', '🚨 Attack')
+            df_out['prediction'] = labels
+            df_out['confidence'] = (confs * 100).round(1)
+            df_out['threat']     = np.where(labels == 'BENIGN', '✅ Benign', '🚨 Attack')
 
             preview_cols = ['threat', 'prediction', 'confidence'] + list(
                 df.select_dtypes(include=[np.number]).columns[:5]
@@ -475,18 +361,16 @@ if uploaded:
                 use_container_width=True,
                 height=320,
                 column_config={
-                    'threat':      st.column_config.TextColumn("Status"),
-                    'prediction':  st.column_config.TextColumn("Predicted Class"),
-                    'confidence':  st.column_config.ProgressColumn(
+                    'threat':     st.column_config.TextColumn("Status"),
+                    'prediction': st.column_config.TextColumn("Predicted Class"),
+                    'confidence': st.column_config.ProgressColumn(
                         "Confidence (%)", min_value=0, max_value=100, format="%.1f%%"
                     ),
                 }
             )
 
-            # ── Export ──────────────────────────────────────────────────────────
             st.markdown('<div class="section-head">07 · EXPORT</div>', unsafe_allow_html=True)
             csv_bytes = df_out.to_csv(index=False).encode()
-
             st.download_button(
                 "⬇  Download Full Results (CSV)",
                 data=csv_bytes,
@@ -501,7 +385,7 @@ if uploaded:
             </div>
             """, unsafe_allow_html=True)
 
-# ── Footer ──────────────────────────────────────────────────────────────────────
+# ── Footer ────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="ids-footer">
   <span>NTA-IDS · Ensemble: RF + SVM + LSTM</span>
